@@ -65,12 +65,13 @@ class Collector(commands.GroupCog):
         if countryball:
             filters["ball"] = countryball
         await interaction.response.defer(ephemeral=True, thinking=True)
+        filters["player__discord_id"] = interaction.user.id
         balls = await BallInstance.filter(**filters).count()
         with open("collector.json", "r") as f:
             collector_json = json.load(f)
         collector_number = collector_json[countryball.country]
         country = f"{countryball.country}"
-        player, created = await Player.get_or_create(discord_id=user.id)
+        player, created = await Player.get_or_create(discord_id=interaction.user.id)
         if balls >= collector_number:
             await interaction.followup.send(
                 f"Congrats! You are now a {country} collector.", 
