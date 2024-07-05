@@ -33,7 +33,7 @@ class Settings:
     bot_name: str
         Usually "BallsDex", can be replaced when possible
     players_group_cog_name: str
-        Set the name of the base command of the "players" cog, /balls by default
+        Set the name of the base command of the "balls" cog, /balls by default
     about_description: str
         Used in the /about command
     github_link: str
