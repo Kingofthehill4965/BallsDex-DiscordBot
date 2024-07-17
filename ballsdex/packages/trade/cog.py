@@ -213,6 +213,82 @@ class Trade(commands.GroupCog):
             f"{countryball.countryball.country} added.", ephemeral=True
         )
 
+    @app_commands.command(extras={"trade": TradeCommandType.PICK})
+    async def add_all(
+        self,
+        interaction: discord.Interaction,
+        countryball: BallEnabledTransform,
+        special: SpecialEnabledTransform | None = None,
+        shiny: bool | None = None,
+    ):
+        """
+        Add a countryball to the ongoing trade.
+
+        Parameters
+        ----------
+        ball: Ball
+            The countryball you want to add to your proposal
+        special: Special
+            Filter the results of autocompletion to a special event. Ignored afterwards.
+        shiny: bool
+            Filter the results of autocompletion to shinies. Ignored afterwards.
+        """
+        if not ball:
+            return
+
+        filters["ball"] = countryball
+        filters["player__discord_id"] = interaction.user.id
+        countryball = await BallInstance.filter(**filters)
+
+        if not countryball.is_tradeable:
+            await interaction.response.send_message(
+                f"You cannot trade this {settings.collectible_name}.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        if countryball.favorite:
+            view = ConfirmChoiceView(interaction)
+            await interaction.followup.send(
+                f"This {settings.collectible_name} is a favorite, "
+                "are you sure you want to trade it?",
+                view=view,
+                ephemeral=True,
+            )
+            await view.wait()
+            if not view.value:
+                return
+
+        trade, trader = self.get_trade(interaction)
+        if not trade or not trader:
+            await interaction.followup.send("You do not have an ongoing trade.", ephemeral=True)
+            return
+        if trader.locked:
+            await interaction.followup.send(
+                "You have locked your proposal, it cannot be edited! "
+                "You can click the cancel button to stop the trade instead.",
+                ephemeral=True,
+            )
+            return
+        if countryball in trader.proposal:
+            await interaction.followup.send(
+                f"You already have this {settings.collectible_name} in your proposal.",
+                ephemeral=True,
+            )
+            return
+        if await countryball.is_locked():
+            await interaction.followup.send(
+                f"This {settings.collectible_name} is currently in an active trade or donation, "
+                "please try again later.",
+                ephemeral=True,
+            )
+            return
+
+        await countryball.lock_for_trade()
+        trader.proposal.append(countryball)
+        await interaction.followup.send(
+            f"{countryball.countryball.country} added.", ephemeral=True
+        )
+        
     @app_commands.command(extras={"trade": TradeCommandType.REMOVE})
     async def remove(
         self,
