@@ -236,7 +236,7 @@ class Trade(commands.GroupCog):
         if not ball:
             return
 
-        filters["ball"] = countryball
+        filters["ball"] = ball
         filters["player__discord_id"] = interaction.user.id
         countryball = await BallInstance.filter(**filters)
 
